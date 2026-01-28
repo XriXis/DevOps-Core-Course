@@ -3,62 +3,58 @@
 ## Overview
 
 **DevOps Info Service** is an educational web service that present simple simple JSON-based HTTP API.
-  
+
 
 ---
 
 ## Tech Stack
 
-- **Python:** v3.14
-- **Web Framework:** FastAPI v0.128.0
-- **ASGI Server:** Uvicorn v0.40.0
+- **Rust:** v0.4.1
+- **Web Framework:** actix-web v4.3
 
 ---
 
 ## Prerequisites
 
-- Python **3.11** or newer
-- pip
-- (recommended) `virtualenv`
+- Rust toolchain installed
 
 ---
 
 ## Project Structure
 
 ```
-app_python/
-├── __init__.py
-├── app.py
-├── requirements.txt
-├── .gitignore
-├── README.md
-├── docs/
+.
+├── Cargo.lock
+├── Cargo.toml
+├── docs
 │   ├── LAB01.md
-│   └── screenshots/
-│       ├── 01-main-endpoint.png
-│       ├── 02-health-check.png
-│       └── 03-formatted-output.png
-├── tests/
-│   └── __init__.py
+│   ├── Rust.md
+│   └── screenshots
+│       └── curl-output.png
+├── README.md
+├── src
+│   ├── config.rs
+│   ├── main.rs
+│   ├── routes.rs
+│   └── system.rs
 ```
 
 ---
 
 ## Installation
-
-1. Clone the repository and navigate to the project directory
+1. Install the rust-toolchain (rust-up). Installation guide provided at https://rustup.rs/
+2. Clone the repository and navigate to the project directory
     ```bash
-    cd solution/app_python
+    cd solution/app_rust
     ```
-2. Create and activate a virtual environment
+3. Compile the project
     ```bash
-    python -m venv .venv
-    source venv/bin/activate #.fish # Linux / macOS
-    # venv\Scripts\activate         # Windows
+    cargo build      # for dev version
+    # cargo build -r # for release version with optimizations
     ```
-3. Install dependencies
+4. Run the compiled binary at 
     ```bash
-    pip install -r requirements.txt
+    ./target/debug/devops-info-service # or .\target\debug\devops-info-service.exe on Windows
     ```
 ---
 
@@ -67,7 +63,7 @@ app_python/
 ### Run with default settings
 
 ```bash
-python app.py
+./target/debug/devops-info-service
 ```
 
 Default configuration:
@@ -78,9 +74,9 @@ Default configuration:
 ### Run with environment variables
 
 ```bash
-PORT=8080 python app.py
-HOST=127.0.0.1 PORT=3000 python app.py
-DEBUG=true python app.py
+PORT=8080 ./target/debug/devops-info-service
+HOST=127.0.0.1 PORT=3000 ./target/debug/devops-info-service
+DEBUG=true python ./target/debug/devops-info-service
 ```
 
 ---
@@ -99,7 +95,7 @@ Example response:
     "name": "devops-info-service",
     "version": "1.0.0",
     "description": "DevOps course info service",
-    "framework": "FastAPI"
+    "framework": "ActixWeb"
   },
   "system": {
     "hostname": "my-host",
@@ -107,7 +103,7 @@ Example response:
     "platform_version": "6.8.0",
     "architecture": "x86_64",
     "cpu_count": 8,
-    "python_version": "3.11.6"
+    "rust_version": "0.4.1"
   },
   "runtime": {
     "uptime_seconds": 3600,
@@ -175,7 +171,7 @@ The application is configurable via environment variables:
 * Log format:
 
 ```
-timestamp - logger - level - message
+timestamp - level - logger - message
 ```
 
 Log level is controlled by the `DEBUG` environment variable.
