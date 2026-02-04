@@ -6,6 +6,9 @@ venv/
 .venv/
 *.log
 
+# Tests
+tests/
+
 # IDE
 .vscode/
 .idea/
@@ -15,3 +18,12 @@ venv/
 
 # Secrets
 .env
+
+# Git
+.git/
+.github/
+.gitignore
+
+# Docs
+*.md
+docs/
