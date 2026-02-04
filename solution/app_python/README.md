@@ -17,9 +17,9 @@
 
 ## Prerequisites
 
-- Python **3.11** or newer
-- pip
-- (recommended) `virtualenv`
+- `Python 3.11` or newer
+- `pip`
+- `docker` or `virtualenv` 
 
 ---
 
@@ -31,6 +31,8 @@ app_python/
 ├── app.py
 ├── requirements.txt
 ├── .gitignore
+├── Dockerfile
+├── .dockerignore
 ├── README.md
 ├── docs/
 │   ├── LAB01.md
@@ -43,8 +45,8 @@ app_python/
 ```
 
 ---
-
-## Installation
+## Run options 
+### Run on host
 
 1. Clone the repository and navigate to the project directory
     ```bash
@@ -60,11 +62,8 @@ app_python/
     ```bash
     pip install -r requirements.txt
     ```
----
 
-## Running the Application
-
-### Run with default settings
+#### Run with default settings
 
 ```bash
 python app.py
@@ -75,7 +74,7 @@ Default configuration:
 * HOST: `0.0.0.0`
 * PORT: `5000`
 
-### Run with environment variables
+#### Run with environment variables
 
 ```bash
 PORT=8080 python app.py
@@ -83,6 +82,36 @@ HOST=127.0.0.1 PORT=3000 python app.py
 DEBUG=true python app.py
 ```
 
+---
+
+### Local Docker build
+1. Be sure docker instance is installed and daemon is running ([`docker.io`](https://docs.docker.com/get-started/get-docker/) or [`docker desktop`](https://docs.docker.com/desktop/))
+2. Clone the repository and navigate to the project directory
+   ```bash
+   cd solution/app_python
+   ```
+3. Build the image
+   ```bash 
+   docker build -t devops-i-lobazov:0.1.0 
+   ```
+4. Run the container with port specification (and optionally environment variables)
+   ```bash 
+   docker run -p 5000:80 -e DEBUG=true devops-i-lobazov:0.1.0 
+   ```
+### Obtain built image from docker hub
+1. Be sure docker instance is installed and daemon is running ([`docker.io`](https://docs.docker.com/get-started/get-docker/) or [`docker desktop`](https://docs.docker.com/desktop/))
+2. Login in the `Docker hub`
+   ```bash 
+   docker login # follow the instructions if any
+   ```
+3. Pull the image
+   ```bash 
+   docker pull xrixis/devops-i-lobazov:0.1.0 
+   ```
+4. Run the container with port specification (and optionally environment variables)
+   ```bash 
+   docker run -p 5000:80 -e DEBUG=true devops-i-lobazov:0.1.0 
+   ```
 ---
 
 ## API Endpoints
