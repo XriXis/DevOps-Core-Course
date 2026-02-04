@@ -3,6 +3,10 @@ name = "devops-info-service"
 version = "1.0.0"
 edition = "2021"
 
+[[bin]]
+name = "devops-info-service"
+path = "src/main.rs"
+
 [dependencies]
 actix-web = "4.3"
 serde = { version = "1.0", features = ["derive"] }

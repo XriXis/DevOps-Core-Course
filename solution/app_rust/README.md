@@ -26,6 +26,8 @@
 .
 ├── Cargo.lock
 ├── Cargo.toml
+├── Dockerfile
+├── .dockerignore
 ├── docs
 │   ├── LAB01.md
 │   ├── Rust.md
@@ -40,8 +42,8 @@
 ```
 
 ---
-
-## Installation
+## Run options
+### Run on host
 1. Install the rust-toolchain (rust-up). Installation guide provided at https://rustup.rs/
 2. Clone the repository and navigate to the project directory
     ```bash
@@ -58,9 +60,9 @@
     ```
 ---
 
-## Running the Application
+### Running the Application
 
-### Run with default settings
+#### Run with default settings
 
 ```bash
 ./target/debug/devops-info-service
@@ -71,7 +73,7 @@ Default configuration:
 * HOST: `0.0.0.0`
 * PORT: `5000`
 
-### Run with environment variables
+#### Run with environment variables
 
 ```bash
 PORT=8080 ./target/debug/devops-info-service
@@ -81,6 +83,22 @@ DEBUG=true python ./target/debug/devops-info-service
 
 ---
 
+### Local Docker build
+1. Be sure docker instance is installed and daemon is running ([`docker.io`](https://docs.docker.com/get-started/get-docker/) or [`docker desktop`](https://docs.docker.com/desktop/))
+2. Clone the repository and navigate to the project directory
+   ```bash
+   cd solution/app_rust
+   ```
+3. Build the image
+   ```bash 
+   docker build -t devops-i-lobazov-rust:0.1.0 
+   ```
+4. Run the container with port specification (and optionally environment variables)
+   ```bash 
+   docker run -p 5000:80 -e DEBUG=true devops-i-lobazov-rust:0.1.0 
+   ```
+
+---
 ## API Endpoints
 
 ### `GET /` — Service Information

@@ -1,0 +1,25 @@
+# Rust artefacts
+target/
+**/*.rs.bk
+
+# Tests
+tests/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Secrets
+.env
+
+# Git
+.git/
+.github/
+.gitignore
+
+# Docs
+*.md
+docs/
