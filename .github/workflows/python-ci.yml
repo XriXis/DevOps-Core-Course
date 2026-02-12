@@ -43,9 +43,11 @@ jobs:
         run: |
           pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
 
+      - name: Install Snyk CLI
+        uses: snyk/actions/setup@master
+
       - name: Run Snyk security scan
-        uses: snyk/actions@master
+        working-directory: ./solution/app_python
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: solution/app_python --severity-threshold=high
+        run: snyk test --severity-threshold=high

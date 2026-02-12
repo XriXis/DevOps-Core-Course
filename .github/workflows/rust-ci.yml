@@ -49,13 +49,15 @@ jobs:
 
       - name: Run tests
         working-directory: ./solution/app_rust
-        run: cargo test --verbose --release
-
+        run: cargo test
+      
+      - name: Install Snyk CLI
+        uses: snyk/actions/setup@master
+      
       - name: Run Snyk security scan
-        uses: snyk/actions@master
+        working-directory: ./solution/app_rust
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: solution/app_rust --severity-threshold=high
+        run: snyk test --file=Cargo.toml --severity-threshold=high
 
 
