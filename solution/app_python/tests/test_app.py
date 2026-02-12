@@ -1,16 +1,6 @@
-"""
-Unit tests for DevOps Info Service
-Tests all endpoints and their responses
-"""
-import pytest
 from fastapi.testclient import TestClient
-import sys
-from pathlib import Path
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from app import app
+
 
 client = TestClient(app)
 
@@ -67,7 +57,14 @@ class TestRootEndpoint:
         """Verify system section has required fields"""
         response = client.get("/")
         system = response.json()["system"]
-        required_fields = ["hostname", "platform", "platform_version", "architecture", "cpu_count", "python_version"]
+        required_fields = [
+            "hostname",
+            "platform",
+            "platform_version",
+            "architecture",
+            "cpu_count",
+            "python_version",
+        ]
         for field in required_fields:
             assert field in system, f"Missing field: {field}"
 
