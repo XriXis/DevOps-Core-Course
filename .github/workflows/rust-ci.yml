@@ -58,6 +58,6 @@ jobs:
         working-directory: ./solution/app_rust
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: snyk test --file=Cargo.toml --severity-threshold=high
+        run: ls -la && snyk test --file=Cargo.toml --severity-threshold=high
 
 
