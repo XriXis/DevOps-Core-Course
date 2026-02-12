@@ -21,6 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up...")
@@ -41,14 +42,16 @@ def get_uptime():
         'human': f"{hours} hours, {minutes} minutes"
     }
 
+
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException)-> HTMLResponse:
+async def http_exception_handler(request: Request, exc: HTTPException) -> HTMLResponse:
     """Default page for error display"""
     logger.debug(f"Error occurs {exc.detail}. Answer with code {exc.status_code}")
     return HTMLResponse(
         content=f"<h1>Error {exc.status_code}</h1><p>{exc.detail}</p>",
         status_code=exc.status_code
     )
+
 
 @app.get("/", description="System and service info about the server")
 async def root(request: Request) -> JSONResponse:
@@ -106,5 +109,3 @@ async def health(request: Request) -> JSONResponse:
 
 if __name__ == "__main__":
     run(app, port=PORT, host=HOST)
-
-

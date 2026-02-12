@@ -1,4 +1,7 @@
-# DevOps Info Service (Python / FastAPI)
+# DevOps Info Service (Rust / Actix-web)
+
+[![Rust CI](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/rust-ci.yml/badge.svg)](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/rust-ci.yml)
+[![Rust CD](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/rust-cd.yml/badge.svg)](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/rust-cd.yml)
 
 ## Overview
 
