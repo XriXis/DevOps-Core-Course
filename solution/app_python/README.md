@@ -1,5 +1,8 @@
 # DevOps Info Service (Python / FastAPI)
 
+[![Python CI](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/python-ci.yml/badge.svg)](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/python-ci.yml)
+[![Python CD](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/python-cd.yml/badge.svg)](https://github.com/XriXis/DevOps-Core-Course/actions/workflows/python-cd.yml)
+
 ## Overview
 
 **DevOps Info Service** is an educational web service that present simple simple JSON-based HTTP API.
@@ -9,7 +12,7 @@
 
 ## Tech Stack
 
-- **Python:** v3.14
+- **Python:** v3.12
 - **Web Framework:** FastAPI v0.128.0
 - **ASGI Server:** Uvicorn v0.40.0
 
@@ -81,6 +84,34 @@ PORT=8080 python app.py
 HOST=127.0.0.1 PORT=3000 python app.py
 DEBUG=true python app.py
 ```
+
+#### Run Tests Locally
+
+1. Navigate to project directory
+    ```bash
+    cd solution/app_python
+    ```
+
+2. Install development dependencies (if not already installed)
+    ```bash
+    pip install -r requirements.dev.txt
+    ```
+
+3. Run all tests with coverage
+    ```bash
+    pytest tests/ -v --cov=. --cov-report=html --cov-report=term-missing
+    ```
+
+4. View coverage report
+    ```bash
+    # HTML report will be generated in htmlcov/index.html
+    open htmlcov/index.html  # macOS/Linux
+    start htmlcov/index.html # Windows
+    ```
+
+**Testing Framework:** pytest  
+**Coverage Target:** 70%+ of code  
+**Test Location:** `tests/test_app.py`
 
 ---
 

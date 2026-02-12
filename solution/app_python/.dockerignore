@@ -8,6 +8,11 @@ venv/
 
 # Tests
 tests/
+.coverage 
+.coverage.* 
+coverage.xml
+htmlcov/ 
+.pytest_cache/
 
 # IDE
 .vscode/
