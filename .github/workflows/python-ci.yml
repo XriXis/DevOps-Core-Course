@@ -44,7 +44,7 @@ jobs:
           pytest tests/ -v --cov=. --cov-report=xml --cov-report=term-missing
 
       - name: Run Snyk security scan
-        uses: snyk/actions/python-3.11@master
+        uses: snyk/actions@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
