@@ -5,7 +5,6 @@ on:
     paths:
       - 'solution/app_rust/**'
       - '.github/workflows/rust-ci.yml'
-      - 'Cargo.lock'
   pull_request:
     paths:
       - 'solution/app_rust/**'
@@ -20,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           components: rustfmt, clippy
@@ -43,14 +42,6 @@ jobs:
           path: solution/app_rust/target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run clippy linter
-        working-directory: ./solution/app_rust
-        run: cargo clippy --all-targets --all-features -- -D warnings
-
-      - name: Run tests
-        working-directory: ./solution/app_rust
-        run: cargo test
-      
       - name: Install Snyk CLI
         uses: snyk/actions/setup@master
       
@@ -58,6 +49,12 @@ jobs:
         working-directory: ./solution/app_rust
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: ls -la && snyk test --file=Cargo.toml --severity-threshold=high
+        run: snyk test --severity-threshold=high
 
+      - name: Run clippy linter
+        working-directory: ./solution/app_rust
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
+      - name: Run tests
+        working-directory: ./solution/app_rust
+        run: cargo test
