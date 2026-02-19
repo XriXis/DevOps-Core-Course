@@ -1,0 +1,16 @@
+# Terraform local state and cache
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+.terraform.lock.hcl
+
+# Local variable overrides and secrets
+terraform.tfvars
+*.tfvars
+*.auto.tfvars
+
+# Credentials and keys
+*.json
+*.pem
+*.key
