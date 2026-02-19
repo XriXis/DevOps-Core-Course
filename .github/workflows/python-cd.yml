@@ -1,0 +1,37 @@
+name: Python CD - Containerize and publish image
+
+on:
+  workflow_run:
+    workflows: ["Python CI - Run tests and lints"]
+    branches: [main, master]
+    types: [completed]
+
+env: 
+  VERSION: 0.1.0
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Build Docker image
+        working-directory: ./solution/app_python
+        run: docker build -t devops-i-lobazov:${{ env.VERSION }} .
+
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      - name: Tag image (version)
+        run: docker tag devops-i-lobazov:${{ env.VERSION }} ${{ secrets.DOCKER_USERNAME }}/devops-i-lobazov:${{ env.VERSION }}
+
+      - name: Tag image (latest)
+        run: docker tag devops-i-lobazov:${{ env.VERSION }} ${{ secrets.DOCKER_USERNAME }}/devops-i-lobazov:latest
+
+      - name: Push image (version tag)
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/devops-i-lobazov:${{ env.VERSION }}
+
+      - name: Push image (latest tag)
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/devops-i-lobazov:latest

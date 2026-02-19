@@ -1,0 +1,61 @@
+name: Rust CI - Lint and test
+
+on:
+  push:
+    paths:
+      - 'solution/app_rust/**'
+      - '.github/workflows/rust-ci.yml'
+  pull_request:
+    paths:
+      - 'solution/app_rust/**'
+      - '.github/workflows/rust-ci.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-git-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: solution/app_rust/target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+      
+      # Free plan allows only limited support for the rust and by unknown reason Snyk CLI doesn't recognize Cargo.toml regardless the efforts
+      # - name: Install Snyk CLI
+      #   uses: snyk/actions/setup@master
+      
+      # - name: Run Snyk security scan
+      #   working-directory: ./solution/app_rust
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: snyk test --severity-threshold=high
+
+      - name: Run clippy linter
+        working-directory: ./solution/app_rust
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Run tests
+        working-directory: ./solution/app_rust
+        run: cargo test

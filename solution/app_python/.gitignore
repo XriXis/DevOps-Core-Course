@@ -5,6 +5,11 @@ __pycache__/
 venv/
 .venv/
 *.log
+.coverage 
+.coverage.* 
+htmlcov/ 
+.pytest_cache/
+coverage.xml
 
 # IDE
 .vscode/
