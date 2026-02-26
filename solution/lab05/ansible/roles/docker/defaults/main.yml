@@ -1,0 +1,14 @@
+---
+docker_apt_arch_map:
+  x86_64: amd64
+  aarch64: arm64
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+docker_users:
+  - "{{ ansible_user }}"

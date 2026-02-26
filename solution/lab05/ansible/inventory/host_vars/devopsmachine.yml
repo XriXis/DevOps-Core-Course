@@ -1,0 +1,5 @@
+# Should be encrypted as well as all.yml, but due to run on local VM there no actual secrets.
+---
+ansible_host: 10.247.1.39
+ansible_user: xrixis
+ansible_ssh_private_key_file: ~/.ssh/devops45labs
