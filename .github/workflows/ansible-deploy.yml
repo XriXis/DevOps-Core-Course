@@ -71,10 +71,15 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           VM_HOST: ${{ secrets.VM_HOST }}
         run: |
+          set -euo pipefail
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$VM_HOST"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
+          touch ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts || true
 
       - name: Run deploy playbook
         env:
@@ -88,7 +93,7 @@ jobs:
           ansible-playbook playbooks/deploy.yml \
             -i inventory/hosts.ini \
             --vault-password-file /tmp/vault_pass \
-            -e "ansible_host=$VM_HOST ansible_user=$VM_USER"
+            -e "ansible_host=$VM_HOST ansible_user=$VM_USER ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'"
 
       - name: Verify deployment endpoint
         env:
