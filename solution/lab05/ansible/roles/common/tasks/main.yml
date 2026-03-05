@@ -1,5 +1,8 @@
 ---
 - name: Common role package management
+  become: true
+  tags:
+    - packages
   block:
     - name: Update apt cache
       ansible.builtin.apt:
@@ -13,8 +16,9 @@
 
   rescue:
     - name: Repair apt cache metadata after failure
-      ansible.builtin.command: apt-get update --fix-missing
-      changed_when: false
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 0
 
     - name: Retry apt cache update
       ansible.builtin.apt:
@@ -28,11 +32,11 @@
         create: true
         mode: "0644"
 
+- name: Common role user management
+  when: common_managed_users | length > 0
   become: true
   tags:
-    - packages
-
-- name: Common role user management
+    - users
   block:
     - name: Ensure managed users are present
       ansible.builtin.user:
@@ -57,8 +61,3 @@
         line: "users block completed"
         create: true
         mode: "0644"
-
-  when: common_managed_users | length > 0
-  become: true
-  tags:
-    - users
