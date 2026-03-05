@@ -1,0 +1,84 @@
+---
+# Wipe logic runs first and is additionally protected by variable + tag checks.
+- name: Include wipe tasks
+  ansible.builtin.include_tasks: wipe.yml
+  tags:
+    - web_app_wipe
+
+- name: Deploy web application with Docker Compose
+  block:
+    - name: Ensure application project directory exists
+      ansible.builtin.file:
+        path: "{{ compose_project_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Render Docker Compose configuration
+      ansible.builtin.template:
+        src: docker-compose.yml.j2
+        dest: "{{ compose_project_dir }}/docker-compose.yml"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Inspect existing container with app name
+      community.docker.docker_container_info:
+        name: "{{ app_name }}"
+      register: web_app_existing_container
+      failed_when: false
+
+    - name: Remove legacy standalone container with conflicting name
+      community.docker.docker_container:
+        name: "{{ app_name }}"
+        state: absent
+      when:
+        - web_app_existing_container.exists | default(false)
+        - >
+          (
+            web_app_existing_container.container.Config.Labels | default({})
+          ).get('com.docker.compose.project', '') == ''
+
+    - name: Deploy stack with Docker Compose v2
+      community.docker.docker_compose_v2:
+        project_src: "{{ compose_project_dir }}"
+        state: present
+        pull: "{{ web_app_compose_pull_policy }}"
+        recreate: auto
+      register: web_app_compose_result
+
+    - name: Wait for application port to be ready
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: "{{ app_port }}"
+        timeout: "{{ app_healthcheck_timeout }}"
+
+    - name: Verify health endpoint
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ app_port }}{{ app_healthcheck_path }}"
+        method: GET
+        status_code: 200
+      register: web_app_health_result
+      retries: 5
+      delay: 3
+      until: web_app_health_result.status == 200
+
+  rescue:
+    - name: Report compose deployment failure details
+      ansible.builtin.debug:
+        msg: "Compose deployment failed for {{ app_name }} in {{ compose_project_dir }}"
+
+    - name: Fail deployment when compose block errors
+      ansible.builtin.fail:
+        msg: "Web application deployment failed. Check docker compose logs on target host."
+
+  always:
+    - name: Log deployment block completion
+      ansible.builtin.debug:
+        msg: "Deployment block finished for {{ app_name }}"
+
+  become: true
+  tags:
+    - app_deploy
+    - compose

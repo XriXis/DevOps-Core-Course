@@ -1,0 +1,20 @@
+---
+app_name: devops-app
+docker_image: "your_dockerhub_username/devops-info-service"
+docker_tag: latest
+app_port: 8000
+app_internal_port: "{{ app_port }}"
+app_restart_policy: unless-stopped
+app_healthcheck_path: /health
+app_healthcheck_timeout: 60
+
+compose_project_dir: "/opt/{{ app_name }}"
+docker_compose_version: "3.8"
+web_app_environment: {}
+web_app_network_name: web_app_network
+web_app_compose_pull_policy: missing
+
+# Set to true to remove application completely.
+# Wipe only:     ansible-playbook playbooks/deploy.yml -e "web_app_wipe=true" --tags web_app_wipe
+# Clean install: ansible-playbook playbooks/deploy.yml -e "web_app_wipe=true"
+web_app_wipe: false

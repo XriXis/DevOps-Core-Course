@@ -1,10 +1,64 @@
 ---
-- name: Update apt cache
-  ansible.builtin.apt:
-    update_cache: true
-    cache_valid_time: 3600
+- name: Common role package management
+  block:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
 
-- name: Install common packages
-  ansible.builtin.apt:
-    name: "{{ common_packages }}"
-    state: present
+    - name: Install common packages
+      ansible.builtin.apt:
+        name: "{{ common_packages }}"
+        state: present
+
+  rescue:
+    - name: Repair apt cache metadata after failure
+      ansible.builtin.command: apt-get update --fix-missing
+      changed_when: false
+
+    - name: Retry apt cache update
+      ansible.builtin.apt:
+        update_cache: true
+
+  always:
+    - name: Record common package block completion
+      ansible.builtin.lineinfile:
+        path: /tmp/ansible-common-role.log
+        line: "packages block completed"
+        create: true
+        mode: "0644"
+
+  become: true
+  tags:
+    - packages
+
+- name: Common role user management
+  block:
+    - name: Ensure managed users are present
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        state: "{{ item.state | default('present') }}"
+        shell: "{{ item.shell | default('/bin/bash') }}"
+        groups: "{{ item.groups | default(omit) }}"
+        append: "{{ item.append | default(true) }}"
+      loop: "{{ common_managed_users }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+  rescue:
+    - name: Log managed user failure context
+      ansible.builtin.debug:
+        msg: "Failed to manage users from common_managed_users"
+
+  always:
+    - name: Record common user block completion
+      ansible.builtin.lineinfile:
+        path: /tmp/ansible-common-role.log
+        line: "users block completed"
+        create: true
+        mode: "0644"
+
+  when: common_managed_users | length > 0
+  become: true
+  tags:
+    - users

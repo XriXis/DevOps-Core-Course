@@ -1,0 +1,97 @@
+name: Ansible Deployment
+
+on:
+  workflow_run:
+    workflows:
+      - "Python CD - Containerize and publish image"
+    branches:
+      - main
+      - master
+    types:
+      - completed
+
+jobs:
+  lint:
+    name: Ansible Lint
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: solution/lab05/ansible
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install lint dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible-core ansible-lint
+          ansible-galaxy collection install -r collections/requirements.yml
+
+      - name: Run ansible-lint
+        run: ansible-lint playbooks/*.yml
+
+  deploy:
+    name: Deploy Web App
+    needs: lint
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: solution/lab05/ansible
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deployment dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible-core
+          ansible-galaxy collection install -r collections/requirements.yml
+
+      - name: Configure SSH access
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
+
+      - name: Run deploy playbook
+        env:
+          ANSIBLE_VAULT_PASSWORD: ${{ secrets.ANSIBLE_VAULT_PASSWORD }}
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+        run: |
+          set -euo pipefail
+          trap 'rm -f /tmp/vault_pass' EXIT
+          printf '%s\n' "$ANSIBLE_VAULT_PASSWORD" > /tmp/vault_pass
+          ansible-playbook playbooks/deploy.yml \
+            -i inventory/hosts.ini \
+            --vault-password-file /tmp/vault_pass \
+            -e "ansible_host=$VM_HOST ansible_user=$VM_USER"
+
+      - name: Verify deployment endpoint
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+        run: |
+          set -euo pipefail
+          sleep 10
+          curl -fsS "http://$VM_HOST:5000"
+          curl -fsS "http://$VM_HOST:5000/health"
