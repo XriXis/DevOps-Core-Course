@@ -9,6 +9,9 @@ on:
       - master
     types:
       - completed
+  push:
+    branches: 
+      - test
 
 jobs:
   lint:
