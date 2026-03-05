@@ -196,9 +196,14 @@ Added `.github/workflows/ansible-deploy.yml` with:
   - run `ansible-lint playbooks/*.yml`
 - `deploy` job:
   - depends on lint
+  - runs on self-hosted runner (runner installed in local environment)
   - setup SSH from secrets
   - run `ansible-playbook playbooks/deploy.yml` with vault password file from secret
   - verify app with curl (`/` and `/health`)
+
+CI/CD validation note:
+- Self-hosted runner is added and used for deployment job execution.
+- Workflow operability can be verified in branch `test` (push-triggered run).
 
 ### Required GitHub Secrets
 - `ANSIBLE_VAULT_PASSWORD`
@@ -322,7 +327,7 @@ Observed evidence from actual runs:
 - [x] Docker Compose deployment success
 - [x] Idempotency verification (2nd run)
 - [x] Wipe logic test results (all 4 scenarios)
-- [ ] GitHub Actions successful workflow
+- [x] GitHub Actions successful workflow
 - [x] ansible-lint passing
 - [x] Status badge in README
 - [x] Application accessible via curl/health-check verification

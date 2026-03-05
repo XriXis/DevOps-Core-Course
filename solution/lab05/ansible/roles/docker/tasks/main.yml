@@ -1,5 +1,8 @@
 ---
 - name: Docker installation block
+  become: true
+  tags:
+    - docker_install
   block:
     - name: Ensure apt prerequisites are installed
       ansible.builtin.apt:
@@ -21,7 +24,7 @@
         url: https://download.docker.com/linux/ubuntu/gpg
         dest: /etc/apt/keyrings/docker.asc
         mode: "0644"
-      notify: restart docker
+      notify: Restart docker
 
     - name: Add Docker apt repository
       ansible.builtin.apt_repository:
@@ -30,7 +33,7 @@
           https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
         state: present
         filename: docker
-      notify: restart docker
+      notify: Restart docker
 
     - name: Install Docker packages
       ansible.builtin.apt:
@@ -79,11 +82,10 @@
         state: started
         enabled: true
 
+- name: Docker configuration block
   become: true
   tags:
-    - docker_install
-
-- name: Docker configuration block
+    - docker_config
   block:
     - name: Ensure users belong to docker group
       ansible.builtin.user:
@@ -103,7 +105,3 @@
         name: docker
         state: started
         enabled: true
-
-  become: true
-  tags:
-    - docker_config
