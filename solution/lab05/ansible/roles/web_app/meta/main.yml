@@ -1,0 +1,4 @@
+---
+dependencies:
+  # Docker runtime must be available before Compose deployment starts.
+  - role: docker
