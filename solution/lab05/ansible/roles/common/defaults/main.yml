@@ -7,3 +7,5 @@ common_packages:
   - htop
   - ca-certificates
   - gnupg
+
+common_managed_users: []

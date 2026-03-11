@@ -1,0 +1,393 @@
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/provision.yml --syntax-check
+playbook: playbooks/provision.yml
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/deploy.yml --syntax-check
+playbook: playbooks/deploy.yml
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/provision.yml --list-tags
+playbook: playbooks/provision.yml
+
+  play #1 (webservers): Provision web servers   TAGS: []
+      TASK TAGS: [common, docker, docker_config, docker_install, packages, users]
+
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/provision.yml --tags "docker" --ask-vault-pass
+Vault password: 
+
+PLAY [Provision web servers] ***************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt prerequisites are installed] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt keyrings directory exists] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker official GPG key] ************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker apt repository] **************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Docker packages] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Python Docker bindings] *********************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure Docker service is enabled and started] *******************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure users belong to docker group] ****************************************************************************************
+ok: [devopsmachine] => (item=xrixis)
+
+TASK [docker : Confirm Docker service state after configuration] ***************************************************************************
+ok: [devopsmachine]
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=10   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/provision.yml --skip-tags "common" --ask-vault-pass
+Vault password: 
+
+PLAY [Provision web servers] ***************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt prerequisites are installed] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt keyrings directory exists] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker official GPG key] ************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker apt repository] **************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Docker packages] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Python Docker bindings] *********************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure Docker service is enabled and started] *******************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure users belong to docker group] ****************************************************************************************
+ok: [devopsmachine] => (item=xrixis)
+
+TASK [docker : Confirm Docker service state after configuration] ***************************************************************************
+ok: [devopsmachine]
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=10   changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/provision.yml --tags "packages" --ask-vault-pass
+Vault password: 
+
+PLAY [Provision web servers] ***************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [common : Update apt cache] ***********************************************************************************************************
+ok: [devopsmachine]
+
+TASK [common : Install common packages] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [common : Record common package block completion] *************************************************************************************
+changed: [devopsmachine]
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/provision.yml --tags "docker_install" --check --ask-vault-pass
+Vault password: 
+
+PLAY [Provision web servers] ***************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt prerequisites are installed] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt keyrings directory exists] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker official GPG key] ************************************************************************************************
+changed: [devopsmachine]
+
+TASK [docker : Add Docker apt repository] **************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Docker packages] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Python Docker bindings] *********************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure Docker service is enabled and started] *******************************************************************************
+ok: [devopsmachine]
+
+RUNNING HANDLER [docker : restart docker] **************************************************************************************************
+changed: [devopsmachine]
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=9    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/deploy.yml -e "web_app_wipe=true" --tags web_app_wipe --ask-vault-pass
+Vault password: 
+
+PLAY [Deploy application] ******************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Include wipe tasks] ********************************************************************************************************
+included: /mnt/c/Users/xzsay/PycharmProjects/DevOps-Core-Course/solution/lab05/ansible/roles/web_app/tasks/wipe.yml for devopsmachine
+
+TASK [web_app : Stop and remove application stack] *****************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Remove docker-compose file] ************************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Remove application directory] **********************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Confirm wipe completion] ***************************************************************************************************
+ok: [devopsmachine] => {
+    "msg": "Application devops-i-lobazov wiped successfully"
+}
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=6    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/deploy.yml --tags web_app_wipe --ask-vault-pass
+Vault password: 
+
+PLAY [Deploy application] ******************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Include wipe tasks] ********************************************************************************************************
+included: /mnt/c/Users/xzsay/PycharmProjects/DevOps-Core-Course/solution/lab05/ansible/roles/web_app/tasks/wipe.yml for devopsmachine
+
+TASK [web_app : Stop and remove application stack] *****************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove docker-compose file] ************************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove application directory] **********************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Confirm wipe completion] ***************************************************************************************************
+skipping: [devopsmachine]
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=2    changed=0    unreachable=0    failed=0    skipped=4    rescued=0    ignored=0   
+
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/deploy.yml -e "web_app_wipe=true" --tags web_app_wipe --ask-vault-pass
+Vault password: 
+
+PLAY [Deploy application] ******************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Include wipe tasks] ********************************************************************************************************
+included: /mnt/c/Users/xzsay/PycharmProjects/DevOps-Core-Course/solution/lab05/ansible/roles/web_app/tasks/wipe.yml for devopsmachine
+
+TASK [web_app : Stop and remove application stack] *****************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Remove legacy standalone container] ****************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Remove docker-compose file] ************************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Remove application directory] **********************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Confirm wipe completion] ***************************************************************************************************
+ok: [devopsmachine] => {
+    "msg": "Application devops-i-lobazov wiped successfully"
+}
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=7    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/deploy.yml --ask-vault-pass
+Vault password: 
+
+PLAY [Deploy application] ******************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt prerequisites are installed] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt keyrings directory exists] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker official GPG key] ************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker apt repository] **************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Docker packages] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Python Docker bindings] *********************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure Docker service is enabled and started] *******************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure users belong to docker group] ****************************************************************************************
+ok: [devopsmachine] => (item=xrixis)
+
+TASK [docker : Confirm Docker service state after configuration] ***************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Include wipe tasks] ********************************************************************************************************
+included: /mnt/c/Users/xzsay/PycharmProjects/DevOps-Core-Course/solution/lab05/ansible/roles/web_app/tasks/wipe.yml for devopsmachine
+
+TASK [web_app : Stop and remove application stack] *****************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove legacy standalone container] ****************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove docker-compose file] ************************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove application directory] **********************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Confirm wipe completion] ***************************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Ensure application project directory exists] *******************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Render Docker Compose configuration] ***************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Inspect existing container with app name] **********************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Remove legacy standalone container with conflicting name] ******************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Deploy stack with Docker Compose v2] ***************************************************************************************
+changed: [devopsmachine]
+
+TASK [web_app : Wait for application port to be ready] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Verify health endpoint] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Log deployment block completion] *******************************************************************************************
+ok: [devopsmachine] => {
+    "msg": "Deployment block finished for devops-i-lobazov"
+}
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=18   changed=3    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0   
+
+$ ANSIBLE_CONFIG=./ansible.cfg ansible-playbook playbooks/deploy.yml --ask-vault-pass ansible-playbook playbooks/deploy.yml --ask-vault-pass
+Vault password: 
+
+PLAY [Deploy application] ******************************************************************************************************************
+
+TASK [Gathering Facts] *********************************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt prerequisites are installed] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure apt keyrings directory exists] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker official GPG key] ************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Add Docker apt repository] **************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Docker packages] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Install Python Docker bindings] *********************************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure Docker service is enabled and started] *******************************************************************************
+ok: [devopsmachine]
+
+TASK [docker : Ensure users belong to docker group] ****************************************************************************************
+ok: [devopsmachine] => (item=xrixis)
+
+TASK [docker : Confirm Docker service state after configuration] ***************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Include wipe tasks] ********************************************************************************************************
+included: /mnt/c/Users/xzsay/PycharmProjects/DevOps-Core-Course/solution/lab05/ansible/roles/web_app/tasks/wipe.yml for devopsmachine
+
+TASK [web_app : Stop and remove application stack] *****************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove legacy standalone container] ****************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove docker-compose file] ************************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Remove application directory] **********************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Confirm wipe completion] ***************************************************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Ensure application project directory exists] *******************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Render Docker Compose configuration] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Inspect existing container with app name] **********************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Remove legacy standalone container with conflicting name] ******************************************************************
+skipping: [devopsmachine]
+
+TASK [web_app : Deploy stack with Docker Compose v2] ***************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Wait for application port to be ready] *************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Verify health endpoint] ****************************************************************************************************
+ok: [devopsmachine]
+
+TASK [web_app : Log deployment block completion] *******************************************************************************************
+ok: [devopsmachine] => {
+    "msg": "Deployment block finished for devops-i-lobazov"
+}
+
+PLAY RECAP *********************************************************************************************************************************
+devopsmachine              : ok=18   changed=0    unreachable=0    failed=0    skipped=6    rescued=0    ignored=0 
