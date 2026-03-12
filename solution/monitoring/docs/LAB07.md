@@ -165,14 +165,15 @@ docker compose logs app-python --tail=20
 - Only the Python app emits JSON logs, so LogQL expressions with `| json` are intended mainly for `devops-python`.
 - Grafana datasource and dashboard are provisioned automatically to reduce manual setup and make the stack repeatable.
 
-## 10. Evidence Checklist
+## 10. Evidence
 
-Add these artifacts before submission:
+The following evidence artifacts were prepared during validation:
 
-- Screenshot of Grafana Explore with logs from at least 3 containers.
-- Screenshot of JSON log output from `app-python`.
-- Screenshot of Grafana Explore showing logs from both `app-python` and `app-rust`.
-- Screenshot of dashboard with all 4 panels populated.
-- Output or screenshot of `docker compose ps` with healthy `loki` and `grafana`.
-- Screenshot of Grafana login page proving anonymous access is disabled.
-- Optional bonus: output of `ansible-playbook playbooks/deploy-monitoring.yml` run twice, where the second run is idempotent.
+| Requirement | Evidence |
+|---|---|
+| Grafana Explore with logs from at least 3 containers | ![01-explore-3-containers](./screenshots/01-explore-3-containers.png) |
+| JSON log output from `app-python` | ![02-app-python-json-logs](./screenshots/02-app-python-json-logs.png) |
+| Grafana Explore with logs from `app-python` and `app-rust` | ![03-explore-python-rust](./screenshots/03-explore-python-rust.png) |
+| Dashboard with all 4 required panels populated | ![04-dashboard-4-panels](./screenshots/04-dashboard-4-panels.png) |
+| `docker compose ps` with healthy `loki` and `grafana` | ![05-docker-compose-ps-healthy](./screenshots/05-docker-compose-ps-healthy.png) |
+| Grafana login page with anonymous access disabled | ![06-grafana-login-no-anon](./screenshots/06-grafana-login-no-anon.png) |
