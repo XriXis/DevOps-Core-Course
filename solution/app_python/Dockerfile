@@ -5,7 +5,6 @@ LABEL authors="xzsay"
 RUN apk add --no-cache shadow  \
     && groupadd -r appgroup \
     && useradd -r -g appgroup -m appuser
-USER appuser
 WORKDIR /app
 
 RUN pip install --upgrade pip>=26.0
@@ -13,5 +12,7 @@ COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
 COPY . .
+RUN chown -R appuser:appgroup /app
+USER appuser
 ENTRYPOINT ["python", "app.py"]
 EXPOSE 5000

@@ -1,0 +1,47 @@
+---
+monitoring_project_dir: /opt/monitoring
+
+monitoring_loki_version: "3.0.0"
+monitoring_promtail_version: "3.0.0"
+monitoring_grafana_version: "12.3.1"
+
+monitoring_loki_port: 3100
+monitoring_promtail_port: 9080
+monitoring_grafana_port: 3000
+monitoring_retention_period: 168h
+monitoring_schema_version: v13
+
+monitoring_grafana_admin_user: admin
+monitoring_grafana_admin_password: change-me-now
+
+monitoring_python_app_enabled: false
+monitoring_python_image: your-dockerhub-username/devops-info-service:latest
+monitoring_python_host_port: 8000
+monitoring_python_container_port: 5000
+
+monitoring_rust_app_enabled: false
+monitoring_rust_image: your-dockerhub-username/devops-info-service-rust:latest
+monitoring_rust_host_port: 8001
+monitoring_rust_container_port: 5000
+
+monitoring_resource_profiles:
+  loki:
+    limit_cpus: "1.0"
+    limit_memory: 1G
+    reserve_cpus: "0.25"
+    reserve_memory: 256M
+  promtail:
+    limit_cpus: "0.5"
+    limit_memory: 512M
+    reserve_cpus: "0.10"
+    reserve_memory: 128M
+  grafana:
+    limit_cpus: "1.0"
+    limit_memory: 1G
+    reserve_cpus: "0.25"
+    reserve_memory: 256M
+  app:
+    limit_cpus: "0.5"
+    limit_memory: 512M
+    reserve_cpus: "0.10"
+    reserve_memory: 128M

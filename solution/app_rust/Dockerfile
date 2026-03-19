@@ -8,10 +8,11 @@ RUN apk add --no-cache  \
     && addgroup -S appgroup  \
     && adduser -S appuser -G appgroup
 
-USER appuser
 WORKDIR /app
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
+RUN chown -R appuser:appgroup /app
+USER appuser
 RUN cargo fetch
 
 COPY ./src ./src
@@ -25,10 +26,11 @@ LABEL authors="xzsay"
 RUN apk add --no-cache shadow \
     && groupadd -r appgroup \
     && useradd -r -g appgroup -m appuser
-USER appuser
 
 WORKDIR /app
 COPY --from=builder /app/target/release/devops-info-service ./devops-info-service
+RUN chown -R appuser:appgroup /app
+USER appuser
 
 EXPOSE 5000
 
