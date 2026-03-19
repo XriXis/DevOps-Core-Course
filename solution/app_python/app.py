@@ -1,12 +1,14 @@
 import logging
 import os
 import platform
+import time
 from datetime import datetime, timezone
 import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -58,6 +60,33 @@ def setup_logging() -> logging.Logger:
 
 logger = setup_logging()
 
+HTTP_REQUESTS_TOTAL = Counter(
+    'app_http_requests_total',
+    'Total number of HTTP requests handled by the application.',
+    ['method', 'endpoint', 'status_code'],
+)
+HTTP_REQUEST_DURATION_SECONDS = Histogram(
+    'app_http_request_duration_seconds',
+    'HTTP request processing duration in seconds.',
+    ['method', 'endpoint'],
+)
+HTTP_ACTIVE_REQUESTS = Gauge(
+    'app_http_active_requests',
+    'Current number of in-flight HTTP requests.',
+)
+ROOT_REQUESTS_TOTAL = Counter(
+    'app_root_requests_total',
+    'Total number of calls to the root endpoint.',
+)
+SYSTEM_INFO_DURATION_SECONDS = Histogram(
+    'app_system_info_duration_seconds',
+    'System information collection duration in seconds.',
+)
+UPTIME_SECONDS = Gauge(
+    'app_uptime_seconds',
+    'Application uptime in seconds.',
+)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -89,9 +118,33 @@ def get_uptime():
     }
 
 
+UPTIME_SECONDS.set_function(lambda: get_uptime()['seconds'])
+
+
+def get_endpoint_label(request: Request) -> str:
+    route = request.scope.get('route')
+    if route and getattr(route, 'path', None):
+        return route.path
+    return request.url.path
+
+
+def collect_system_info() -> dict:
+    with SYSTEM_INFO_DURATION_SECONDS.time():
+        return {
+            "hostname": platform.node(),
+            "platform": platform.system(),
+            "platform_version": platform.release(),
+            "architecture": platform.machine(),
+            "cpu_count": os.cpu_count(),
+            "python_version": platform.python_version()
+        }
+
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     client_ip = request.client.host if request.client else 'unknown'
+    start_time = time.perf_counter()
+    track_metrics = request.url.path != '/metrics'
     extra = {
         'event': 'http_request',
         'method': request.method,
@@ -101,18 +154,50 @@ async def log_requests(request: Request, call_next):
     }
 
     logger.info("HTTP request started", extra=extra)
+    if track_metrics:
+        HTTP_ACTIVE_REQUESTS.inc()
 
     try:
         response = await call_next(request)
+        return response
     except Exception:
         logger.exception("HTTP request failed", extra=extra)
+        if track_metrics:
+            endpoint = get_endpoint_label(request)
+            HTTP_REQUESTS_TOTAL.labels(
+                method=request.method,
+                endpoint=endpoint,
+                status_code='500',
+            ).inc()
+            HTTP_REQUEST_DURATION_SECONDS.labels(
+                method=request.method,
+                endpoint=endpoint,
+            ).observe(time.perf_counter() - start_time)
         raise
+    finally:
+        if track_metrics and 'response' in locals():
+            endpoint = get_endpoint_label(request)
+            HTTP_REQUESTS_TOTAL.labels(
+                method=request.method,
+                endpoint=endpoint,
+                status_code=str(response.status_code),
+            ).inc()
+            HTTP_REQUEST_DURATION_SECONDS.labels(
+                method=request.method,
+                endpoint=endpoint,
+            ).observe(time.perf_counter() - start_time)
+            logger.info(
+                "HTTP request completed",
+                extra={**extra, 'status_code': response.status_code},
+            )
+        elif 'response' in locals():
+            logger.info(
+                "HTTP request completed",
+                extra={**extra, 'status_code': response.status_code},
+            )
 
-    logger.info(
-        "HTTP request completed",
-        extra={**extra, 'status_code': response.status_code},
-    )
-    return response
+        if track_metrics:
+            HTTP_ACTIVE_REQUESTS.dec()
 
 
 @app.exception_handler(HTTPException)
@@ -138,6 +223,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> HTMLRe
 @app.get("/", description="System and service info about the server")
 async def root(request: Request) -> JSONResponse:
     """System and service info about the server"""
+    ROOT_REQUESTS_TOTAL.inc()
     return JSONResponse(status_code=200, content={
         "service": {
             "name": "devops-info-service",
@@ -145,14 +231,7 @@ async def root(request: Request) -> JSONResponse:
             "description": "DevOps course info service",
             "framework": "FastAPI"
         },
-        "system": {
-            "hostname": platform.node(),
-            "platform": platform.system(),
-            "platform_version": platform.release(),
-            "architecture": platform.machine(),
-            "cpu_count": os.cpu_count(),
-            "python_version": platform.python_version()
-        },
+        "system": collect_system_info(),
         "runtime": {
             "uptime_seconds": get_uptime()["seconds"],
             "uptime_human": get_uptime()["human"],
@@ -185,6 +264,11 @@ async def health(request: Request) -> JSONResponse:
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "uptime_seconds": get_uptime()["seconds"],
     })
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics() -> Response:
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":

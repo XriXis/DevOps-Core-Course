@@ -194,6 +194,38 @@ class TestHealthEndpoint:
             assert field in data, f"Missing field: {field}"
 
 
+class TestMetricsEndpoint:
+    """Tests for GET /metrics endpoint and custom metrics."""
+
+    def test_metrics_status_code(self):
+        response = client.get("/metrics")
+        assert response.status_code == 200
+
+    def test_metrics_content_type(self):
+        response = client.get("/metrics")
+        assert "text/plain" in response.headers["content-type"]
+
+    def test_metrics_contains_custom_metric_names(self):
+        client.get("/")
+        client.get("/health")
+
+        response = client.get("/metrics")
+        body = response.text
+
+        assert "app_http_requests_total" in body
+        assert "app_http_request_duration_seconds" in body
+        assert "app_http_active_requests" in body
+        assert "app_root_requests_total" in body
+        assert "app_system_info_duration_seconds" in body
+        assert "app_uptime_seconds" in body
+
+    def test_metrics_contains_root_endpoint_labels(self):
+        client.get("/")
+
+        response = client.get("/metrics")
+        assert 'app_http_requests_total{endpoint="/",method="GET",status_code="200"}' in response.text
+
+
 class TestErrorHandling:
     """Tests for error handling"""
 
