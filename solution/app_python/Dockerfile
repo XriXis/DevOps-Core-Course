@@ -3,8 +3,8 @@ FROM python:3.14.2-alpine3.23
 
 LABEL authors="xzsay"
 RUN apk add --no-cache shadow  \
-    && groupadd -r appgroup \
-    && useradd -r -g appgroup -m appuser
+    && groupadd -g 122 -r appgroup \
+    && useradd -u 122 -r -g appgroup -m appuser
 WORKDIR /app
 
 RUN pip install --upgrade pip>=26.0
@@ -13,6 +13,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 RUN chown -R appuser:appgroup /app
-USER appuser
+USER 122:122
 ENTRYPOINT ["python", "app.py"]
 EXPOSE 5000

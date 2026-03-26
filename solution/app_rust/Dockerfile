@@ -5,14 +5,14 @@ RUN apk add --no-cache  \
     shadow  \
     musl-dev \
     gcc \
-    && addgroup -S appgroup  \
-    && adduser -S appuser -G appgroup
+    && addgroup -g 122 -S appgroup  \
+    && adduser -S -u 122 -G appgroup appuser
 
 WORKDIR /app
 COPY ./Cargo.toml ./Cargo.toml
 COPY ./Cargo.lock ./Cargo.lock
 RUN chown -R appuser:appgroup /app
-USER appuser
+USER 122:122
 RUN cargo fetch
 
 COPY ./src ./src
@@ -24,13 +24,13 @@ FROM alpine:3.20
 # OPTIONAL: PORT {5000}, HOST {0.0.0.0}, DEBUG {false}
 LABEL authors="xzsay"
 RUN apk add --no-cache shadow \
-    && groupadd -r appgroup \
-    && useradd -r -g appgroup -m appuser
+    && groupadd -g 122 -r appgroup \
+    && useradd -u 122 -r -g appgroup -m appuser
 
 WORKDIR /app
 COPY --from=builder /app/target/release/devops-info-service ./devops-info-service
 RUN chown -R appuser:appgroup /app
-USER appuser
+USER 122:122
 
 EXPOSE 5000
 
