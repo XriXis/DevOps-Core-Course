@@ -1,0 +1,12 @@
+config:
+  yandex:cloudId: "<your-cloud-id>"
+  yandex:folderId: "<your-folder-id>"
+  yandex:serviceAccountKeyFile: "C:/Users/<your-user>/.yc/sa-key.json"
+  yandex:zone: "ru-central1-d"
+  lab04-yandex:projectName: "lab04"
+  lab04-yandex:zone: "ru-central1-d"
+  lab04-yandex:subnetCidr: "10.10.0.0/24"
+  lab04-yandex:imageFamily: "ubuntu-2404-lts"
+  lab04-yandex:sshUser: "ubuntu"
+  lab04-yandex:sshPublicKeyPath: "C:/Users/<your-user>/.ssh/your_key.pub"
+  lab04-yandex:myIpCidr: "<your-public-ip>/32"
