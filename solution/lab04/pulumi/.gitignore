@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+
+# Stack config can contain secrets
+Pulumi.*.yaml
+!Pulumi.dev.yaml.example
