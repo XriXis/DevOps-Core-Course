@@ -18,14 +18,18 @@ service:
   nodePort: 30080
 
 env:
-  - name: HOST
-    value: 0.0.0.0
-  - name: PORT
-    value: "5000"
-  - name: DEBUG
-    value: "false"
-  - name: RELEASE_VERSION
-    value: "v1"
+  host: 0.0.0.0
+  port: "5000"
+  debug: "false"
+  releaseVersion: "v1"
+
+secret:
+  create: true
+  name: ""
+  type: Opaque
+  data:
+    username: "change-me-user"
+    password: "change-me-password"
 
 resources:
   requests:
@@ -72,9 +76,26 @@ updateStrategy:
     maxSurge: 1
     maxUnavailable: 0
 
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
 automountServiceAccountToken: false
 
 extraLabels: {}
+
+vault:
+  enabled: false
+  role: devops-info-service
+  authPath: auth/kubernetes
+  secretPath: secret/data/devops-info-service/config
+  injectFileName: app-secrets.txt
+  templateFileName: app.env
+  injectCommand: ""
+  secrets:
+    usernameKey: username
+    passwordKey: password
 
 ingress:
   enabled: false

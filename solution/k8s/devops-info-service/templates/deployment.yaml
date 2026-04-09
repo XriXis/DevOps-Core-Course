@@ -14,13 +14,18 @@ spec:
       {{- include "devops-info-service.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      {{- if .Values.vault.enabled }}
+      annotations:
+        {{- include "devops-info-service.vaultAnnotations" . | nindent 8 }}
+      {{- end }}
       labels:
         {{- include "devops-info-service.selectorLabels" . | nindent 8 }}
         {{- with .Values.extraLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
     spec:
-      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      serviceAccountName: {{ include "devops-info-service.serviceAccountName" . }}
+      automountServiceAccountToken: {{ or .Values.automountServiceAccountToken .Values.vault.enabled }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -30,8 +35,11 @@ spec:
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
+          envFrom:
+            - secretRef:
+                name: {{ include "devops-info-service.secretName" . }}
           env:
-            {{- include "common.envList" .Values.env | nindent 12 }}
+            {{- include "devops-info-service.envVars" . | nindent 12 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:
