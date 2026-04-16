@@ -20,6 +20,3 @@ coverage.xml
 
 # Secrets
 .env
-
-# Local persistence
-data/

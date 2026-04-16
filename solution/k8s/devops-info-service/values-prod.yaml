@@ -1,12 +1,4 @@
-replicaCount: 1
-
-configMaps:
-  env:
-    data:
-      APP_ENV: prod
-      LOG_LEVEL: info
-      FEATURE_VISITS: "true"
-      FEATURE_CONFIG_RELOAD: checksum-restart
+replicaCount: 5
 
 image:
   tag: "0.1.0"
@@ -30,6 +22,3 @@ livenessProbe:
 readinessProbe:
   initialDelaySeconds: 10
   periodSeconds: 3
-
-persistence:
-  size: 200Mi

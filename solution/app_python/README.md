@@ -5,143 +5,237 @@
 
 ## Overview
 
-DevOps Info Service is a FastAPI application used across the course labs. For Lab 12 it was extended with:
+**DevOps Info Service** is an educational web service that present simple simple JSON-based HTTP API.
+  
 
-- a persisted visits counter stored in a file
-- a `GET /visits` endpoint
-- optional file-based configuration loading from `CONFIG_PATH`
-- a Docker Compose workflow for local persistence testing
+---
 
 ## Tech Stack
 
-- Python 3.14
-- FastAPI 0.128.0
-- Uvicorn 0.40.0
-- Prometheus client 0.23.1
+- **Python:** v3.12
+- **Web Framework:** FastAPI v0.128.0
+- **ASGI Server:** Uvicorn v0.40.0
+
+---
+
+## Prerequisites
+
+- `Python 3.11` or newer
+- `pip`
+- `docker` or `virtualenv` 
+
+---
 
 ## Project Structure
 
-```text
-solution/app_python/
+```
+app_python/
+├── __init__.py
 ├── app.py
-├── Dockerfile
-├── docker-compose.yml
 ├── requirements.txt
-├── requirements.dev.txt
+├── .gitignore
+├── Dockerfile
+├── .dockerignore
+├── README.md
+├── docs/
+│   ├── LAB01.md
+│   └── screenshots/
+│       ├── 01-main-endpoint.png
+│       ├── 02-health-check.png
+│       └── 03-formatted-output.png
 ├── tests/
-└── docs/
+│   └── __init__.py
 ```
 
-## Run On Host
+---
+## Run options 
+### Run on host
+
+1. Clone the repository and navigate to the project directory
+    ```bash
+    cd solution/app_python
+    ```
+2. Create and activate a virtual environment
+    ```bash
+    python -m venv .venv
+    source venv/bin/activate #.fish # Linux / macOS
+    # venv\Scripts\activate         # Windows
+    ```
+3. Install dependencies
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+#### Run with default settings
 
 ```bash
-cd solution/app_python
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
 python app.py
 ```
 
-Environment variable examples:
+Default configuration:
+
+* HOST: `0.0.0.0`
+* PORT: `5000`
+
+#### Run with environment variables
 
 ```bash
-$env:PORT="8080"; python app.py
-$env:DEBUG="true"; python app.py
-$env:VISITS_FILE="C:\temp\visits"; python app.py
-$env:CONFIG_PATH="C:\temp\config.json"; python app.py
+PORT=8080 python app.py
+HOST=127.0.0.1 PORT=3000 python app.py
+DEBUG=true python app.py
 ```
 
-## Run Tests
+#### Run Tests Locally
 
-```bash
-cd solution/app_python
-pip install -r requirements.dev.txt
-pytest tests/ -v --cov=. --cov-report=term-missing
-```
+1. Navigate to project directory
+    ```bash
+    cd solution/app_python
+    ```
 
-## Run With Docker
+2. Install development dependencies (if not already installed)
+    ```bash
+    pip install -r requirements.dev.txt
+    ```
 
-Build and run directly:
+3. Run all tests with coverage
+    ```bash
+    pytest tests/ -v --cov=. --cov-report=html --cov-report=term-missing
+    ```
 
-```bash
-cd solution/app_python
-docker build -t devops-info-service:lab12 .
-docker run --rm -p 5000:5000 `
-  -e VISITS_FILE=/data/visits `
-  -v ${PWD}/data:/data `
-  devops-info-service:lab12
-```
+4. View coverage report
+    ```bash
+    # HTML report will be generated in htmlcov/index.html
+    open htmlcov/index.html  # macOS/Linux
+    start htmlcov/index.html # Windows
+    ```
 
-Run with Docker Compose:
+**Testing Framework:** pytest  
+**Coverage Target:** 70%+ of code  
+**Test Location:** `tests/test_app.py`
 
-```bash
-cd solution/app_python
-docker compose up --build -d
-curl http://localhost:5000/
-curl http://localhost:5000/visits
-Get-Content .\data\visits
-docker compose restart
-curl http://localhost:5000/visits
-docker compose down
-```
+---
 
-The Compose setup mounts `./data` into the container at `/data`, so the visits counter survives container restarts.
+### Local Docker build
+1. Be sure docker instance is installed and daemon is running ([`docker.io`](https://docs.docker.com/get-started/get-docker/) or [`docker desktop`](https://docs.docker.com/desktop/))
+2. Clone the repository and navigate to the project directory
+   ```bash
+   cd solution/app_python
+   ```
+3. Build the image
+   ```bash 
+   docker build -t devops-i-lobazov:0.1.0 
+   ```
+4. Run the container with port specification (and optionally environment variables)
+   ```bash 
+   docker run -p 5000:80 -e DEBUG=true devops-i-lobazov:0.1.0 
+   ```
+### Obtain built image from docker hub
+1. Be sure docker instance is installed and daemon is running ([`docker.io`](https://docs.docker.com/get-started/get-docker/) or [`docker desktop`](https://docs.docker.com/desktop/))
+2. Login in the `Docker hub`
+   ```bash 
+   docker login # follow the instructions if any
+   ```
+3. Pull the image
+   ```bash 
+   docker pull xrixis/devops-i-lobazov:0.1.0 
+   ```
+4. Run the container with port specification (and optionally environment variables)
+   ```bash 
+   docker run -p 5000:80 -e DEBUG=true devops-i-lobazov:0.1.0 
+   ```
+---
 
 ## API Endpoints
 
-### `GET /`
+### `GET /` — Service Information
 
-Returns service metadata, system information, runtime data, loaded configuration, and the incremented visits counter.
-
-Important behavior:
-
-- every request to `/` increments the persisted counter
-- the counter is written to the file defined by `VISITS_FILE`
-- the response includes the active config file path and visits file path
-
-### `GET /visits`
-
-Returns the current persisted counter without incrementing it.
+Returns detailed information about the service, system, runtime, and incoming request.
 
 Example response:
 
 ```json
 {
-  "count": 5,
-  "file_path": "/data/visits"
+  "service": {
+    "name": "devops-info-service",
+    "version": "1.0.0",
+    "description": "DevOps course info service",
+    "framework": "FastAPI"
+  },
+  "system": {
+    "hostname": "my-host",
+    "platform": "Linux",
+    "platform_version": "6.8.0",
+    "architecture": "x86_64",
+    "cpu_count": 8,
+    "python_version": "3.11.6"
+  },
+  "runtime": {
+    "uptime_seconds": 3600,
+    "uptime_human": "1 hours, 0 minutes",
+    "current_time": "2026-01-07 14:30:00",
+    "timezone": ""
+  },
+  "request": {
+    "client_ip": "127.0.0.1",
+    "user_agent": "curl/7.81.0",
+    "method": "GET",
+    "path": "/"
+  },
+  "endpoints": [
+    {
+      "path": "/",
+      "method": "GET",
+      "description": "System and service info about the server"
+    },
+    {
+      "path": "/health",
+      "method": "GET",
+      "description": "Service health chek"
+    }
+  ]
 }
 ```
 
-### `GET /health`
+---
 
-Returns service health and uptime.
+### `GET /health` — Health Check
 
-### `GET /metrics`
+A lightweight endpoint for monitoring and orchestration systems.
 
-Returns Prometheus metrics for the service.
+Example response:
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-01-07 14:32:10",
+  "uptime_seconds": 3720
+}
+```
+
+HTTP status: **200 OK**
+
+---
 
 ## Configuration
 
-Supported environment variables:
+The application is configurable via environment variables:
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `HOST` | `0.0.0.0` | Bind address |
-| `PORT` | `5000` | HTTP port |
-| `DEBUG` | `false` | Enables debug logging |
-| `RELEASE_VERSION` | `v1` | Release label exposed by the app |
-| `VISITS_FILE` | `/data/visits` | Path to the persisted visits counter |
-| `CONFIG_PATH` | `/config/config.json` | Path to JSON configuration file |
+| Variable | Default   | Description                 |
+| -------- | --------- | --------------------------- |
+| `HOST`   | `0.0.0.0` | Server bind address         |
+| `PORT`   | `5000`    | Server port                 |
+| `DEBUG`  | `false`   | Enables debug-level logging |
 
-If `CONFIG_PATH` does not exist, the app falls back to built-in defaults and keeps running.
-
-## Persistence Notes
-
-- the visits counter is initialized to `0` if the file does not exist
-- writes are serialized with an in-process lock
-- the file is updated using an atomic replace operation to reduce corruption risk
-- this storage model is suitable for a single-replica lab deployment backed by a mounted volume
+---
 
 ## Logging
 
-The app writes structured JSON logs to stdout. This keeps it compatible with the monitoring labs and makes request lifecycle events easy to inspect in Docker or Kubernetes.
+* INFO logs on application startup and shutdown
+* DEBUG logs for incoming HTTP requests
+* Log format:
+
+```
+timestamp - logger - level - message
+```
+
+Log level is controlled by the `DEBUG` environment variable.
