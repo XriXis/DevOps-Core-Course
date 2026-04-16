@@ -1,0 +1,13 @@
+{
+  "applicationName": "devops-info-service",
+  "environment": "dev",
+  "featureFlags": {
+    "visitsEndpoint": true,
+    "configFromConfigMap": true,
+    "hotReloadViaChecksumRestart": true
+  },
+  "settings": {
+    "welcomeMessage": "Hello from ConfigMap",
+    "documentation": "Lab 12 configuration mounted from a Helm-managed ConfigMap"
+  }
+}
