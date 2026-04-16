@@ -12,7 +12,8 @@ COPY requirements.txt ./requirements.txt
 RUN pip install -r requirements.txt
 
 COPY . .
-RUN chown -R appuser:appgroup /app
+RUN mkdir -p /data /config \
+    && chown -R appuser:appgroup /app /data /config
 USER 122:122
 ENTRYPOINT ["python", "app.py"]
 EXPOSE 5000

@@ -42,6 +42,30 @@
 {{- end -}}
 {{- end -}}
 
+{{- define "devops-info-service.configFileMapName" -}}
+{{- if .Values.configMaps.file.name -}}
+{{- .Values.configMaps.file.name -}}
+{{- else -}}
+{{- printf "%s-config" (include "devops-info-service.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "devops-info-service.envConfigMapName" -}}
+{{- if .Values.configMaps.env.name -}}
+{{- .Values.configMaps.env.name -}}
+{{- else -}}
+{{- printf "%s-env" (include "devops-info-service.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "devops-info-service.pvcName" -}}
+{{- if .Values.persistence.name -}}
+{{- .Values.persistence.name -}}
+{{- else -}}
+{{- printf "%s-data" (include "devops-info-service.fullname" .) -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "devops-info-service.envVars" -}}
 - name: HOST
   value: {{ .Values.env.host | quote }}
@@ -51,6 +75,10 @@
   value: {{ .Values.env.debug | quote }}
 - name: RELEASE_VERSION
   value: {{ .Values.env.releaseVersion | quote }}
+- name: CONFIG_PATH
+  value: {{ .Values.env.configPath | quote }}
+- name: VISITS_FILE
+  value: {{ .Values.env.visitsFile | quote }}
 {{- end -}}
 
 {{- define "devops-info-service.vaultAnnotations" -}}

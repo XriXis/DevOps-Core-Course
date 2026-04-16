@@ -1,9 +1,9 @@
 nameOverride: ""
 fullnameOverride: ""
-partOf: devops-lab10
+partOf: devops-lab12
 component: web
 
-replicaCount: 3
+replicaCount: 1
 revisionHistoryLimit: 5
 
 image:
@@ -22,6 +22,21 @@ env:
   port: "5000"
   debug: "false"
   releaseVersion: "v1"
+  configPath: /config/config.json
+  visitsFile: /data/visits
+
+configMaps:
+  file:
+    name: ""
+    mountPath: /config
+    fileName: config.json
+  env:
+    name: ""
+    data:
+      APP_ENV: dev
+      LOG_LEVEL: info
+      FEATURE_VISITS: "true"
+      FEATURE_CONFIG_RELOAD: checksum-restart
 
 secret:
   create: true
@@ -84,6 +99,15 @@ serviceAccount:
 automountServiceAccountToken: false
 
 extraLabels: {}
+
+persistence:
+  enabled: true
+  name: ""
+  mountPath: /data
+  accessModes:
+    - ReadWriteOnce
+  size: 100Mi
+  storageClass: ""
 
 vault:
   enabled: false
