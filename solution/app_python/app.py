@@ -1,32 +1,107 @@
-import platform
-import os
 import logging
+import os
+import platform
+import time
+from datetime import datetime, timezone
+import json
 from contextlib import asynccontextmanager
-from starlette.exceptions import HTTPException
-from datetime import datetime
 
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, Response
+from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
+from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
 from uvicorn import run
 
 START_TIME = datetime.now()
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', 5000))
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
-logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+
+
+class JSONFormatter(logging.Formatter):
+    """Render application logs as JSON for Loki/Grafana ingestion."""
+
+    _reserved_fields = {
+        'args', 'asctime', 'created', 'exc_info', 'exc_text', 'filename',
+        'funcName', 'levelname', 'levelno', 'lineno', 'module', 'msecs',
+        'message', 'msg', 'name', 'pathname', 'process', 'processName',
+        'relativeCreated', 'stack_info', 'thread', 'threadName', 'taskName',
+    }
+
+    def format(self, record: logging.LogRecord) -> str:
+        payload = {
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'level': record.levelname,
+            'logger': record.name,
+            'message': record.getMessage(),
+        }
+
+        for key, value in record.__dict__.items():
+            if key not in self._reserved_fields:
+                payload[key] = value
+
+        if record.exc_info:
+            payload['exception'] = self.formatException(record.exc_info)
+
+        return json.dumps(payload, ensure_ascii=True)
+
+
+def setup_logging() -> logging.Logger:
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    handler = logging.StreamHandler()
+    handler.setFormatter(JSONFormatter())
+    root_logger.addHandler(handler)
+    root_logger.setLevel(logging.DEBUG if DEBUG else logging.INFO)
+    return logging.getLogger(__name__)
+
+
+logger = setup_logging()
+
+HTTP_REQUESTS_TOTAL = Counter(
+    'app_http_requests_total',
+    'Total number of HTTP requests handled by the application.',
+    ['method', 'endpoint', 'status_code'],
 )
-logger = logging.getLogger(__name__)
+HTTP_REQUEST_DURATION_SECONDS = Histogram(
+    'app_http_request_duration_seconds',
+    'HTTP request processing duration in seconds.',
+    ['method', 'endpoint'],
+)
+HTTP_ACTIVE_REQUESTS = Gauge(
+    'app_http_active_requests',
+    'Current number of in-flight HTTP requests.',
+)
+ROOT_REQUESTS_TOTAL = Counter(
+    'app_root_requests_total',
+    'Total number of calls to the root endpoint.',
+)
+SYSTEM_INFO_DURATION_SECONDS = Histogram(
+    'app_system_info_duration_seconds',
+    'System information collection duration in seconds.',
+)
+UPTIME_SECONDS = Gauge(
+    'app_uptime_seconds',
+    'Application uptime in seconds.',
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Starting up...")
+    logger.info(
+        "Application startup",
+        extra={
+            'event': 'startup',
+            'host': HOST,
+            'port': PORT,
+            'debug': DEBUG,
+            'service': 'devops-info-service',
+        },
+    )
     yield
-    logger.info("Shutting down...")
+    logger.info("Application shutdown", extra={'event': 'shutdown'})
 
 
 app = FastAPI(lifespan=lifespan)
@@ -43,10 +118,102 @@ def get_uptime():
     }
 
 
+UPTIME_SECONDS.set_function(lambda: get_uptime()['seconds'])
+
+
+def get_endpoint_label(request: Request) -> str:
+    route = request.scope.get('route')
+    if route and getattr(route, 'path', None):
+        return route.path
+    return request.url.path
+
+
+def collect_system_info() -> dict:
+    with SYSTEM_INFO_DURATION_SECONDS.time():
+        return {
+            "hostname": platform.node(),
+            "platform": platform.system(),
+            "platform_version": platform.release(),
+            "architecture": platform.machine(),
+            "cpu_count": os.cpu_count(),
+            "python_version": platform.python_version()
+        }
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    client_ip = request.client.host if request.client else 'unknown'
+    start_time = time.perf_counter()
+    track_metrics = request.url.path != '/metrics'
+    extra = {
+        'event': 'http_request',
+        'method': request.method,
+        'path': request.url.path,
+        'client_ip': client_ip,
+        'user_agent': request.headers.get('user-agent', ''),
+    }
+
+    logger.info("HTTP request started", extra=extra)
+    if track_metrics:
+        HTTP_ACTIVE_REQUESTS.inc()
+
+    try:
+        response = await call_next(request)
+        return response
+    except Exception:
+        logger.exception("HTTP request failed", extra=extra)
+        if track_metrics:
+            endpoint = get_endpoint_label(request)
+            HTTP_REQUESTS_TOTAL.labels(
+                method=request.method,
+                endpoint=endpoint,
+                status_code='500',
+            ).inc()
+            HTTP_REQUEST_DURATION_SECONDS.labels(
+                method=request.method,
+                endpoint=endpoint,
+            ).observe(time.perf_counter() - start_time)
+        raise
+    finally:
+        if track_metrics and 'response' in locals():
+            endpoint = get_endpoint_label(request)
+            HTTP_REQUESTS_TOTAL.labels(
+                method=request.method,
+                endpoint=endpoint,
+                status_code=str(response.status_code),
+            ).inc()
+            HTTP_REQUEST_DURATION_SECONDS.labels(
+                method=request.method,
+                endpoint=endpoint,
+            ).observe(time.perf_counter() - start_time)
+            logger.info(
+                "HTTP request completed",
+                extra={**extra, 'status_code': response.status_code},
+            )
+        elif 'response' in locals():
+            logger.info(
+                "HTTP request completed",
+                extra={**extra, 'status_code': response.status_code},
+            )
+
+        if track_metrics:
+            HTTP_ACTIVE_REQUESTS.dec()
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException) -> HTMLResponse:
     """Default page for error display"""
-    logger.debug(f"Error occurs {exc.detail}. Answer with code {exc.status_code}")
+    logger.warning(
+        "HTTP exception handled",
+        extra={
+            'event': 'http_exception',
+            'method': request.method,
+            'path': request.url.path,
+            'status_code': exc.status_code,
+            'client_ip': request.client.host if request.client else 'unknown',
+            'error': exc.detail,
+        },
+    )
     return HTMLResponse(
         content=f"<h1>Error {exc.status_code}</h1><p>{exc.detail}</p>",
         status_code=exc.status_code
@@ -56,7 +223,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> HTMLRe
 @app.get("/", description="System and service info about the server")
 async def root(request: Request) -> JSONResponse:
     """System and service info about the server"""
-    logger.debug(f'Request: {request.method} {request.url.path}')
+    ROOT_REQUESTS_TOTAL.inc()
     return JSONResponse(status_code=200, content={
         "service": {
             "name": "devops-info-service",
@@ -64,14 +231,7 @@ async def root(request: Request) -> JSONResponse:
             "description": "DevOps course info service",
             "framework": "FastAPI"
         },
-        "system": {
-            "hostname": platform.node(),
-            "platform": platform.system(),
-            "platform_version": platform.release(),
-            "architecture": platform.machine(),
-            "cpu_count": os.cpu_count(),
-            "python_version": platform.python_version()
-        },
+        "system": collect_system_info(),
         "runtime": {
             "uptime_seconds": get_uptime()["seconds"],
             "uptime_human": get_uptime()["human"],
@@ -99,12 +259,16 @@ async def root(request: Request) -> JSONResponse:
 @app.get("/health", description="Service health chek")
 async def health(request: Request) -> JSONResponse:
     """Service health-chek"""
-    logger.debug(f'Request: {request.method} {request.url.path}')
     return JSONResponse(status_code=200, content={
         "status": "healthy",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "uptime_seconds": get_uptime()["seconds"],
     })
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics() -> Response:
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":
