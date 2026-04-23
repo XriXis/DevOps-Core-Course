@@ -4,3 +4,6 @@ test
 .env
 k8s/certs/
 solution/monitoring/.env
+*.exe
+*.tgz
+**/data/**
