@@ -2,3 +2,8 @@ test
 .idea
 .vscode
 .env
+k8s/certs/
+solution/monitoring/.env
+*.exe
+*.tgz
+**/data/**
