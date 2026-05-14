@@ -1,0 +1,46 @@
+---
+# Common role configuration
+common_packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - lsb-release
+  - python3
+  - python3-pip
+deploy_user: devops
+deploy_user_groups:
+  - sudo
+deploy_user_shell: /bin/bash
+deploy_user_ssh_pubkey: ""
+
+# Docker role configuration
+docker_apt_arch: "{{ ansible_architecture | replace('x86_64', 'amd64') | replace('aarch64', 'arm64') }}"
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+docker_config_manage_daemon: true
+docker_daemon_config:
+  log-driver: json-file
+  log-opts:
+    max-size: 10m
+    max-file: "3"
+
+# Web application configuration
+app_name: devops-app
+docker_image: your_dockerhub_username/devops-info-service
+docker_tag: latest
+app_port: 8000
+app_internal_port: 8000
+docker_compose_version: "3.8"
+compose_project_dir: "/opt/{{ app_name }}"
+
+# Example non-sensitive app vars
+app_environment:
+  APP_ENV: production
+  APP_PORT: "{{ app_internal_port | string }}"
+
+# Use ansible-vault for sensitive variables.
+app_secret_key: "change-me-with-ansible-vault"

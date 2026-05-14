@@ -1,0 +1,18 @@
+{{- if eq .Values.workload.kind "Deployment" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "devops-info-service.fullname" . }}
+  labels:
+    {{- include "devops-info-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+  strategy:
+    {{- toYaml .Values.updateStrategy | nindent 4 }}
+  selector:
+    matchLabels:
+      {{- include "devops-info-service.selectorLabels" . | nindent 6 }}
+  template:
+    {{- include "devops-info-service.podTemplate" . | nindent 4 }}
+{{- end }}
