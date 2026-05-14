@@ -1,0 +1,143 @@
+version: "3.8"
+
+services:
+  loki:
+    image: grafana/loki:{{ monitoring_loki_version }}
+    command:
+      - "-config.file=/etc/loki/config.yml"
+    ports:
+      - "{{ monitoring_loki_port }}:{{ monitoring_loki_port }}"
+    volumes:
+      - ./loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    networks:
+      - logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:{{ monitoring_loki_port }}/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    deploy:
+      resources:
+        limits:
+          cpus: "{{ monitoring_resource_profiles.loki.limit_cpus }}"
+          memory: {{ monitoring_resource_profiles.loki.limit_memory }}
+        reservations:
+          cpus: "{{ monitoring_resource_profiles.loki.reserve_cpus }}"
+          memory: {{ monitoring_resource_profiles.loki.reserve_memory }}
+
+  promtail:
+    image: grafana/promtail:{{ monitoring_promtail_version }}
+    command:
+      - "-config.file=/etc/promtail/config.yml"
+    volumes:
+      - ./promtail/config.yml:/etc/promtail/config.yml:ro
+      - promtail-positions:/tmp
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - logging
+    deploy:
+      resources:
+        limits:
+          cpus: "{{ monitoring_resource_profiles.promtail.limit_cpus }}"
+          memory: {{ monitoring_resource_profiles.promtail.limit_memory }}
+        reservations:
+          cpus: "{{ monitoring_resource_profiles.promtail.reserve_cpus }}"
+          memory: {{ monitoring_resource_profiles.promtail.reserve_memory }}
+
+  grafana:
+    image: grafana/grafana:{{ monitoring_grafana_version }}
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_ALLOW_EMBEDDING: "false"
+      GF_SECURITY_ADMIN_USER: "{{ monitoring_grafana_admin_user }}"
+      GF_SECURITY_ADMIN_PASSWORD: "{{ monitoring_grafana_admin_password }}"
+      GF_SERVER_ROOT_URL: "http://localhost:{{ monitoring_grafana_port }}"
+    ports:
+      - "{{ monitoring_grafana_port }}:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      loki:
+        condition: service_healthy
+    networks:
+      - logging
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "{{ monitoring_resource_profiles.grafana.limit_cpus }}"
+          memory: {{ monitoring_resource_profiles.grafana.limit_memory }}
+        reservations:
+          cpus: "{{ monitoring_resource_profiles.grafana.reserve_cpus }}"
+          memory: {{ monitoring_resource_profiles.grafana.reserve_memory }}
+
+{% if monitoring_python_app_enabled %}
+  app-python:
+    image: {{ monitoring_python_image }}
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "{{ monitoring_python_container_port }}"
+      DEBUG: "false"
+    ports:
+      - "{{ monitoring_python_host_port }}:{{ monitoring_python_container_port }}"
+    labels:
+      logging: "promtail"
+      app: "devops-python"
+    networks:
+      - logging
+    deploy:
+      resources:
+        limits:
+          cpus: "{{ monitoring_resource_profiles.app.limit_cpus }}"
+          memory: {{ monitoring_resource_profiles.app.limit_memory }}
+        reservations:
+          cpus: "{{ monitoring_resource_profiles.app.reserve_cpus }}"
+          memory: {{ monitoring_resource_profiles.app.reserve_memory }}
+{% endif %}
+
+{% if monitoring_rust_app_enabled %}
+  app-rust:
+    image: {{ monitoring_rust_image }}
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "{{ monitoring_rust_container_port }}"
+      DEBUG: "false"
+      RUST_LOG: "info,actix_web=info"
+    ports:
+      - "{{ monitoring_rust_host_port }}:{{ monitoring_rust_container_port }}"
+    labels:
+      logging: "promtail"
+      app: "devops-rust"
+    networks:
+      - logging
+    deploy:
+      resources:
+        limits:
+          cpus: "{{ monitoring_resource_profiles.app.limit_cpus }}"
+          memory: {{ monitoring_resource_profiles.app.limit_memory }}
+        reservations:
+          cpus: "{{ monitoring_resource_profiles.app.reserve_cpus }}"
+          memory: {{ monitoring_resource_profiles.app.reserve_memory }}
+{% endif %}
+
+volumes:
+  loki-data:
+  grafana-data:
+  promtail-positions:
+
+networks:
+  logging:
+    driver: bridge

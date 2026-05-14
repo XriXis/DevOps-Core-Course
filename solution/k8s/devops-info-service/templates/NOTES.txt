@@ -1,0 +1,10 @@
+1. Release name: {{ .Release.Name }}
+2. Namespace: {{ .Release.Namespace }}
+3. Service: {{ include "devops-info-service.serviceName" . }}
+4. Service type: {{ .Values.service.type }}
+
+To inspect the rendered values:
+  helm get values {{ .Release.Name }} -n {{ .Release.Namespace }}
+
+To forward local traffic:
+  kubectl port-forward svc/{{ include "devops-info-service.serviceName" . }} 8080:{{ .Values.service.port }} -n {{ .Release.Namespace }}
