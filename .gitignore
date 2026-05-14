@@ -1,4 +1,12 @@
 test
+!solution/edge-api/test/
+!solution/edge-api/test/**
 .idea
 .vscode
 .env
+k8s/certs/
+solution/monitoring/.env
+*.exe
+*.tgz
+**/data/**
+.local/

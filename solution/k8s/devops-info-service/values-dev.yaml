@@ -1,0 +1,35 @@
+replicaCount: 1
+
+configMaps:
+  env:
+    data:
+      APP_ENV: dev
+      LOG_LEVEL: debug
+      FEATURE_VISITS: "true"
+      FEATURE_CONFIG_RELOAD: checksum-restart
+
+image:
+  tag: "latest"
+
+service:
+  type: NodePort
+  nodePort: 30081
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+livenessProbe:
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  initialDelaySeconds: 3
+  periodSeconds: 5
+
+persistence:
+  size: 100Mi
